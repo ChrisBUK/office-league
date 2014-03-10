@@ -5,7 +5,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/AbstractData.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/DataTables.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/DataFixtures.php';
 
-// All basic API requests must have a valid action and resource parameter.
+// All basic API requests must have a valid method and action parameter.
 $strMethod = UrlParameters::getParam('method');
 $strAction = UrlParameters::getParam('action');
 
