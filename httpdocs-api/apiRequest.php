@@ -1,5 +1,6 @@
 <?php
 
+require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/ApiException.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/UrlParameters.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/AbstractData.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/DataTables.php';
@@ -11,47 +12,34 @@ $strAction = UrlParameters::getParam('action');
 
 $strResource = sprintf('%s/%s', $strMethod, $strAction);
 
-switch ($strResource)
-{
-    case 'get/tablesByCompetition':
-        $arrRequired = array('competitionId', 'seasonId');        
-        $bolHasRequired = AbstractData::hasRequiredParameters($arrRequired);
-        
-        if (!$bolHasRequired)
-        {
-            throw New Exception("$strResource requires ".join(',',$arrRequired));
-        }
-        
-        $arrPassedVars = UrlParameters::getFullParamList($arrRequired);
-        
-        list($strStatement,$arrQueryParams) = DataTables::getTablesByCompetition($arrPassedVars);    
-        break;
-        
-    case 'get/fixturesByCompetitionAndSeason':
-        $arrRequired = array('competitionId', 'seasonId');        
-        $bolHasRequired = AbstractData::hasRequiredParameters($arrRequired);
-
-        if (!$bolHasRequired)
-        {
-            throw New Exception("$strResource requires ".join(',',$arrRequired));
-        }
-
-        $arrPassedVars = UrlParameters::getFullParamList($arrRequired);
-        
-        list($strStatement,$arrQueryParams) = DataFixtures::getFixturesByCompetitionAndSeason($arrPassedVars);        
-        break;
-        
-    default:
-        throw new Exception("Unrecognised API request: $strResource");
-        die;
+try {
+    switch ($strResource)
+    {
+        case 'get/tablesByCompetition':    
+            list($strStatement,$arrQueryParams) = DataTables::getTablesByCompetition();    
+            break;
+            
+        case 'get/fixturesByCompetitionAndSeason':
+            list($strStatement,$arrQueryParams) = DataFixtures::getFixturesByCompetitionAndSeason();        
+            break;
+            
+        default:
+            throw new ApiException("Unrecognised API request: $strResource");
+            die;
+    }
+} catch (ApiException $objException) {
+    $objException->gracefulError($objException->getCode());
+    die;
 }
 
+
+
 try {
-    $objDb = new PDO('mysql:host=localhost;dbname=office_league;charset=utf8', 'root', '');
+    $objDb = new PDO('mysql:host=localhost;dbname=office_league;charset=utf8', 'root', '', array(PDO::ERRMODE_EXCEPTION));
     $objQuery = $objDb->prepare($strStatement);
     $objQuery->execute($arrQueryParams);
     echo json_encode($objQuery->fetchAll(PDO::FETCH_ASSOC));
 } catch (PDOException $objException) {
-    die ("PDO died badly: ".$objException->message);
+    die ("PDO died badly: ".$objException->getMessage());
 }
 ?>
