@@ -70,13 +70,12 @@ class UrlParameters {
         switch ($strParamName) 
         {
             case 'method':
-                $arrAllowList = array('get','put','delete');
+                $arrAllowList = array('get','create');
                 $strParamValue = self::getAllowedParam('method', $arrAllowList, 'get');
                 break;
             
             case 'action':
-                $arrAllowList = array('fixturesByCompetitionAndSeason','tablesByCompetition');
-                $strParamValue = self::getAllowedParam('action', $arrAllowList);
+                $strParamValue = !empty($_GET['action']) ? $_GET['action'] : null;
                 break;
                 
             case 'competitionId':                

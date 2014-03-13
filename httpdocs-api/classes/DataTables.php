@@ -9,7 +9,7 @@
         * 
         * @param mixed $arrParams
         */
-        public function getTablesByCompetition()
+        public function getTablesByCompetition($strFormat='json')
         {
             $arrRequired = array('competitionId', 'seasonId'); 
             $arrOptional = array();
@@ -24,7 +24,9 @@
             $strSql = "SELECT * FROM competition_table WHERE ctb_competition = ? AND ctb_season = ?";
             $arrQueryParams = array($arrParams['competitionId'], $arrParams['seasonId']);
 
-            return array($strSql, $arrQueryParams);
+            $objQuery = $this->objDb->prepare($strSql);
+            $objQuery->execute($arrQueryParams);
+            return self::formatData($objQuery->fetchAll(PDO::FETCH_ASSOC), $strFormat);
         }
 
     }
