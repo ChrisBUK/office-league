@@ -32,7 +32,7 @@
         /**
         * Generate all fixtures for a competition
         */
-        public function createFixturesByCompetition()
+        public function createFixturesByCompetition($strFormat='json')
         {
             $arrRequired = array('competitionId'); 
             $arrOptional = array();
@@ -43,67 +43,42 @@
             }       
 
             $arrParams = UrlParameters::getFullParamList($arrRequired, $arrOptional);            
-            
-            // TODO: Find the last season (if exists) and see if its been completed, if so, create a new season ID, if not, fail.
-            //throw new ApiException("Season already underway", 400);
-            
+                        
             // Roll fixture list & Build up a round of matches for each player.
             $arrTeams = DataTeams::getTeamsInCompetition('array');
-            $intRoundSize = count($arrTeams) - 1;
-
-            $arrFixtures = array();
+            shuffle($arrTeams); //Randomly ordering the teams prevents fixtures always being in the same order.
             
-            foreach($arrTeams as $intRound => $objHomeTeam)
-            {
-                $arrOpponents = $arrTeams;
-                unset($arrOpponents[$intRound]); //don't want to play yourself.
-                    
-                foreach($arrOpponents as $intOpponentRound => $objAwayTeam) {
-                    $intHomeTeamId = $objHomeTeam->teamId;
-                    $arrFixtures[] = array('homeTeam'=>$objHomeTeam, 'awayTeam'=>$objAwayTeam);
-                }                 
-                shuffle($arrFixtures);                            
+            $intNumTeams = count($arrTeams);
+            
+            //Even up the teams so that fixtures can always be plotted, in unevenly number leagues, each team will have a round where they don't play.
+            if ($intNumTeams % 2 == 1) {
+                $intNumTeams++;
             }
             
-            $arrFixtureRounds = array_fill(1,$intRoundSize,array());
-            $arrTeamsInRound = array_fill(1,$intRoundSize,array());
-                        
-            while (!empty($arrFixtures)) {
-                
-                $intRound = 1;
-                $bolAddedFixture = false;
-                $arrFixture = array_shift($arrFixtures);
-                
-                while (!$bolAddedFixture) 
-                {         
-                    if (empty($arrTeamsInRound[$intRound]) || (!in_array($arrFixture['homeTeam']->teamId, $arrTeamsInRound[$intRound]) && !in_array($arrFixture['awayTeam']->teamId, $arrTeamsInRound[$intRound])))
-                    {                    
-                        $arrFixtureRounds[$intRound][] = $arrFixture;                   
-                        $arrTeamsInRound[$intRound][] = $arrFixture['homeTeam']->teamId;
-                        $arrTeamsInRound[$intRound][] = $arrFixture['awayTeam']->teamId;
-                        $bolAddedFixture = true;
-                    } else {
-                        $intRound ++;
-                    }                    
-                }                
-            }
-                                     
-            // TODO: Insert each fixture in a single db transaction.
-            $this->objDb->beginTransaction();
-            foreach ($arrFixtureRounds as $intRound=>$arrRoundFixtures)
+            $intTotalRounds = $intNumTeams - 1;
+            $intMatchesPerRound = $intNumTeams / 2;
+            
+            //Some of this logic borrowed from http://bluebones.net/2005/05/generating-fixture-lists/
+            for ($intRound = 0; $intRound < $intTotalRounds; $intRound++)
             {
-                foreach ($arrRoundFixtures as $arrFixture)
+                for ($intMatch = 0; $intMatch < $intMatchesPerRound; $intMatch++)
                 {
-                    $strSql = "INSERT INTO competition_fixture (fix_season, fix_competition, fix_round, fix_home_team, fix_away_team) VALUES (?, ?, ?, ?, ?)";    
-                    $arrQueryParams = array(1, $arrParams['competitionId'], $intRound, $arrFixture['homeTeam']->teamId, $arrFixture['awayTeam']->teamId);
-                    $objQuery = $this->objDb->prepare($strSql);
-                    $objQuery->execute($arrQueryParams);
+                    $intHome = ($intRound + $intMatch) % ($intNumTeams - 1);
+                    $intAway = ($intNumTeams - 1 - $intMatch + $intRound) % ($intNumTeams - 1);
+                    
+                    if ($intMatch == 0)
+                    {
+                        $intAway = $intNumTeams - 1;
+                    }
+                                        
+                    if (!empty($arrTeams[$intHome]) && !empty($arrTeams[$intAway]))
+                    {
+                        $arrFixtureRounds[$intRound][$intMatch] = array($arrTeams[$intHome], $arrTeams[$intAway]);    
+                    }                                                        
                 }
-            }
-            $this->objDb->commit();
-                                    
-            // TODO: Return the season ID
-            
+            }            
+                                                            
+            return self::formatData($arrFixtureRounds, $strFormat);            
         }
 
     }
