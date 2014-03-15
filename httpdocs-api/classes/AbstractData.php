@@ -5,7 +5,7 @@
 * @Author Chris Booker
 */
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/UrlParameters.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/Parameters.php';
 
 abstract class AbstractData
 {
@@ -33,11 +33,11 @@ abstract class AbstractData
     * 
     * @param mixed $arrRequired
     */
-    public function hasRequiredParameters(array $arrRequired)
+    public function hasRequiredParameters(array $arrRequired, array $arrParamSource)
     {
         foreach ($arrRequired as $strParam)
         {
-            if (UrlParameters::getParam($strParam) == null)
+            if (Parameters::getParam($strParam, $arrParamSource) == null)
             {
                 return false;
             }

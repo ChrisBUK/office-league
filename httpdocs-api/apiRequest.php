@@ -1,7 +1,7 @@
 <?php
 
 require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/ApiException.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/UrlParameters.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/Parameters.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/AbstractData.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/DataTables.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/DataFixtures.php';
@@ -9,8 +9,8 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/DataTeams.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/DataSeasons.php';
 
 // All basic API requests must have a valid method and action parameter.
-$strMethod = UrlParameters::getParam('method');
-$strAction = UrlParameters::getParam('action');
+$strMethod = Parameters::getParam('method', $_GET);
+$strAction = Parameters::getParam('action', $_GET);
 
 $strResource = sprintf('%s/%s', $strMethod, $strAction);
 
@@ -19,25 +19,36 @@ try {
     {
         case 'get/tablesByCompetition':    
             $objRequest = new DataTables();
-            $strJson = $objRequest->getTablesByCompetition();
+            $strJson = $objRequest->getTablesByCompetition($_GET);
             break;
             
         case 'get/fixturesByCompetitionAndSeason':
             $objRequest = new DataFixtures();
-            $strJson = $objRequest->getFixturesByCompetitionAndSeason();        
+            $strJson = $objRequest->getFixturesByCompetitionAndSeason($_GET);        
             break;
             
         case 'get/teamsByCompetition':
-            $objRequest = new DataTeams();
-            $strJson = $objRequest->getTeamsInCompetition();        
+            $objRequest = new DataTeams();            
+            $strJson = $objRequest->getTeamsInCompetition($_GET);        
             break;
             
         case 'create/newSeason':
-            $objRequest = new DataFixtures();
-            $strJson = $objRequest->createFixturesByCompetition();
-            break;
+            //Get existing data from the current season with this season_type_id to decide promotions/relegations
+            $objOldSeason = new DataSeasons();
+            $objOldSeason->closeSeason();
         
+            //List all comps with this season_type_id
+            $objData = new DataSeasons();
+            $objData->getCompsBySeasonType();
             
+            //Apply promotions and relegations between comps
+            
+            //Generate a fixture list for each comp
+            
+            $objRequest = new DataFixtures();
+            $arrFixtures = $objRequest->createLeagueFixturesByCompetition($_GET, 'array');
+            break;
+                    
         default:
             throw new ApiException("Unrecognised API request: $strResource");
             die;
@@ -47,5 +58,6 @@ try {
     die;
 }
 
+header("Content-Type: text/json");
 die($strJson);
 ?>

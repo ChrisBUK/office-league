@@ -5,17 +5,7 @@
 * @author Chris Booker
 */
 
-class UrlParameters {
-
-    /**
-    * Ensure all parameters adhere to a common format of being trimmed/lowercased.
-    * 
-    * @param string 
-    */
-    protected static function cleanParam($strValue)
-    {
-        return trim(strtolower($strValue));
-    }
+class Parameters {
     
     /**
     * Check a parameter against an allowed list and return a valid value, or a default value, or bool false.
@@ -24,36 +14,42 @@ class UrlParameters {
     * @param mixed $arrAllowedList
     * @param mixed $strDefault
     */
-    protected static function getAllowedParam($strParamName, array $arrAllowedList, $strDefault=null)
+    protected static function getAllowedParam(array $arrParamSource, $strParamName, array $arrAllowedList, $strDefault=null)
     {        
-        if (empty($_GET[$strParamName]) || !in_array($_GET[$strParamName], $arrAllowedList))
+        if (empty($arrParamSource[$strParamName]) || !in_array($arrParamSource[$strParamName], $arrAllowedList))
         {            
             return ($strDefault === null) ? false : $strDefault;
         }
         
-        return $_GET[$strParamName];        
+        return $arrParamSource[$strParamName];        
     }
     
     /**
     * Build a list of parameters based on what is allowed, and what is given, so we can ensure 
     * that other crap doesn't get through.
     * 
-    * @param mixed $arrRequired
-    * @param mixed $arrOptional
+    * @param array $arrRequired - parameters that are required
+    * @param array $arrOptional - valid parameters that are optional
+    * @param array $arrParamSource - a list that is being checked to get required/optional params from.
     */
-    public static function getFullParamList(array $arrRequired, array $arrOptional = null)
+    public static function getFullParamList(array $arrRequired, array $arrOptional = null, array $arrParamSource = null)
     {
+        if ($arrParamSource == null)
+        {
+            $arrParamSource = $_GET; //Take params from the URL if not otherwise specified.
+        }
+        
         $arrParamList = array();
         
         foreach ($arrRequired as $strParam) 
         {
-            $arrParamList[$strParam] = self::getParam($strParam);
+            $arrParamList[$strParam] = self::getParam($strParam, $arrParamSource);
         }
         if ($arrOptional != null)
         {
             foreach ($arrOptional as $strParam)
             {
-                $arrParamList[$strParam] = self::getParam($strParam);
+                $arrParamList[$strParam] = self::getParam($strParam, $arrParamSource);
             }
         }
         return $arrParamList;
@@ -64,30 +60,30 @@ class UrlParameters {
     * 
     * @param string 
     */
-    public static function getParam($strParamName) 
+    public static function getParam($strParamName, $arrParamSource) 
     {        
                
         switch ($strParamName) 
         {
             case 'method':
                 $arrAllowList = array('get','create');
-                $strParamValue = self::getAllowedParam('method', $arrAllowList, 'get');
+                $strParamValue = self::getAllowedParam($arrParamSource, 'method', $arrAllowList, 'get');
                 break;
             
             case 'action':
-                $strParamValue = !empty($_GET['action']) ? $_GET['action'] : null;
+                $strParamValue = !empty($arrParamSource['action']) ? $arrParamSource['action'] : null;
                 break;
                 
             case 'competitionId':                
-                $strParamValue = !empty($_GET['competitionId']) ? intval($_GET['competitionId']) : 0;
+                $strParamValue = !empty($arrParamSource['competitionId']) ? intval($arrParamSource['competitionId']) : 0;
                 break;
             
             case 'seasonId':
-                $strParamValue = !empty($_GET['seasonId']) ? intval($_GET['seasonId']) : 0;
+                $strParamValue = !empty($arrParamSource['seasonId']) ? intval($arrParamSource['seasonId']) : 0;
                 break;
             
             case 'teamId':
-                $strParamValue = !empty($_GET['teamId']) ? intval($_GET['teamId']) : 0;
+                $strParamValue = !empty($arrParamSource['teamId']) ? intval($arrParamSource['teamId']) : 0;
                 break;            
                 
             default:
