@@ -23,7 +23,7 @@
 
             $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);
 
-            $strSql = "SELECT * FROM competition_table WHERE ctb_competition = ? AND ctb_season = ?";
+            $strSql = "SELECT * FROM competition_team WHERE ctm_competition = ? AND ctm_season_instance = ?";
             $arrQueryParams = array($arrParams['competitionId'], $arrParams['seasonId']);
 
             $objQuery = $this->objDb->prepare($strSql);
@@ -49,21 +49,128 @@
 
             $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);
                         
-            // Check if this competition uses a table (comp_format)
-            $strSql = "SELECT comp_format FROM competition_type WHERE comp_type_id = ?";
+            // Get all comp details
+            $strSql = "SELECT * FROM competition_type WHERE comp_type_id = ?";
             $arrQueryParams = array($arrParams['competitionId']);
             $objQuery = $this->objDb->prepare($strSql);
             $objQuery->execute($arrQueryParams);
+            $arrComp = $objQuery->fetch(PDO::FETCH_ASSOC);
                         
-            if ($objQuery->fetch(PDO::FETCH_COLUMN) != 'LEAGUE')
+            if ($arrComp['comp_format'] != 'LEAGUE')
             {
                 throw new ApiException("This competition does not use a league table.", 405);
             }
-            
+                        
             // Create a blank table if one isn't already there.            
             self::createTablesByCompetition($arrParams);
             
             // Update table from fixtures
+            $arrParams['played'] = 1;
+            $objFixtures = new DataFixtures();        
+            $arrFixtures = $objFixtures->getFixturesByCompetitionAndSeason($arrParams, 'array');
+                        
+            $arrTeams = array();
+            foreach ($arrFixtures as $arrResult)
+            {                
+                $intHomeTeamId = $arrResult['fix_home_team'];
+                $intAwayTeamId = $arrResult['fix_away_team'];
+                
+                // Played
+                $arrTeams[$intHomeTeamId]['played'] = empty($arrTeams[$intHomeTeamId]['played']) ? 1 : $arrTeams[$intHomeTeamId]['played'] + 1;
+                $arrTeams[$intAwayTeamId]['played'] = empty($arrTeams[$intAwayTeamId]['played']) ? 1 : $arrTeams[$intAwayTeamId]['played'] + 1;
+             
+                // W/D/L
+                switch (true)
+                {
+                    case ($arrResult['fix_home_score'] > $arrResult['fix_away_score']): //home win
+                        $arrTeams[$intHomeTeamId]['won'] = empty($arrTeams[$intHomeTeamId]['won']) ? 1 : $arrTeams[$intHomeTeamId]['won'] + 1;
+                        $arrTeams[$intHomeTeamId]['lost'] = empty($arrTeams[$intHomeTeamId]['lost']) ? 0 : $arrTeams[$intHomeTeamId]['lost'];
+                        $arrTeams[$intHomeTeamId]['drawn'] = empty($arrTeams[$intHomeTeamId]['drawn']) ? 0 : $arrTeams[$intHomeTeamId]['drawn'];
+                        
+                        $arrTeams[$intAwayTeamId]['lost'] = empty($arrTeams[$intAwayTeamId]['lost']) ? 1 : $arrTeams[$intAwayTeamId]['lost'] + 1;
+                        $arrTeams[$intAwayTeamId]['won'] = empty($arrTeams[$intAwayTeamId]['won']) ? 0 : $arrTeams[$intAwayTeamId]['won'];
+                        $arrTeams[$intAwayTeamId]['drawn'] = empty($arrTeams[$intAwayTeamId]['drawn']) ? 0 : $arrTeams[$intAwayTeamId]['drawn'];
+                        break;
+                        
+                    case ($arrResult['fix_away_score'] > $arrResult['fix_home_score']): //away win
+                        $arrTeams[$intHomeTeamId]['lost'] = empty($arrTeams[$intHomeTeamId]['lost']) ? 1 : $arrTeams[$intHomeTeamId]['lost'] + 1;
+                        $arrTeams[$intHomeTeamId]['won'] = empty($arrTeams[$intHomeTeamId]['won']) ? 0 : $arrTeams[$intHomeTeamId]['won'];
+                        $arrTeams[$intHomeTeamId]['drawn'] = empty($arrTeams[$intHomeTeamId]['drawn']) ? 0 : $arrTeams[$intHomeTeamId]['drawn'];
+
+                        $arrTeams[$intAwayTeamId]['won'] = empty($arrTeams[$intAwayTeamId]['won']) ? 1 : $arrTeams[$intAwayTeamId]['won'] + 1;
+                        $arrTeams[$intAwayTeamId]['lost'] = empty($arrTeams[$intAwayTeamId]['lost']) ? 0 : $arrTeams[$intAwayTeamId]['lost'];
+                        $arrTeams[$intAwayTeamId]['drawn'] = empty($arrTeams[$intAwayTeamId]['drawn']) ? 0 : $arrTeams[$intAwayTeamId]['drawn'];
+                        break;
+                        
+                    default: //draw 
+                        $arrTeams[$intHomeTeamId]['drawn'] = empty($arrTeams[$intHomeTeamId]['drawn']) ? 1 : $arrTeams[$intHomeTeamId]['drawn'] + 1;
+                        $arrTeams[$intHomeTeamId]['won']   = empty($arrTeams[$intHomeTeamId]['won']) ? 0 : $arrTeams[$intHomeTeamId]['won'];
+                        $arrTeams[$intHomeTeamId]['lost']  = empty($arrTeams[$intHomeTeamId]['lost']) ? 0 : $arrTeams[$intHomeTeamId]['lost'];
+
+                        $arrTeams[$intAwayTeamId]['drawn'] = empty($arrTeams[$intAwayTeamId]['drawn']) ? 1 : $arrTeams[$intAwayTeamId]['drawn'] + 1;
+                        $arrTeams[$intAwayTeamId]['won']   = empty($arrTeams[$intAwayTeamId]['won']) ? 0 : $arrTeams[$intAwayTeamId]['won'];
+                        $arrTeams[$intAwayTeamId]['lost']  = empty($arrTeams[$intAwayTeamId]['lost']) ? 0 : $arrTeams[$intAwayTeamId]['lost'];
+                        break;                
+                }             
+                
+                //points
+                $arrTeams[$intHomeTeamId]['points']  = $arrTeams[$intHomeTeamId]['won'] * $arrComp['comp_points_win'];
+                $arrTeams[$intHomeTeamId]['points'] += $arrTeams[$intHomeTeamId]['drawn'] * $arrComp['comp_points_draw'];
+                $arrTeams[$intHomeTeamId]['points'] += $arrTeams[$intHomeTeamId]['lost'] * $arrComp['comp_points_lose'];
+
+                $arrTeams[$intAwayTeamId]['points']  = $arrTeams[$intAwayTeamId]['won'] * $arrComp['comp_points_win'];
+                $arrTeams[$intAwayTeamId]['points'] += $arrTeams[$intAwayTeamId]['drawn'] * $arrComp['comp_points_draw'];
+                $arrTeams[$intAwayTeamId]['points'] += $arrTeams[$intAwayTeamId]['lost'] * $arrComp['comp_points_lose'];
+                
+                //difference
+                $arrTeams[$intHomeTeamId]['score_for'] = empty($arrTeams[$intHomeTeamId]['score_for']) ? $arrResult['fix_home_score'] : $arrTeams[$intHomeTeamId]['score_for'] + $arrResult['fix_home_score'];
+                $arrTeams[$intHomeTeamId]['score_against'] = empty($arrTeams[$intHomeTeamId]['score_against']) ? $arrResult['fix_away_score'] : $arrTeams[$intHomeTeamId]['score_against'] + $arrResult['fix_away_score'];
+                $arrTeams[$intHomeTeamId]['score_diff'] = $arrTeams[$intHomeTeamId]['score_for'] - $arrTeams[$intHomeTeamId]['score_against'];
+                
+                $arrTeams[$intAwayTeamId]['score_for'] = empty($arrTeams[$intAwayTeamId]['score_for']) ? $arrResult['fix_away_score'] : $arrTeams[$intAwayTeamId]['score_for'] + $arrResult['fix_away_score'];
+                $arrTeams[$intAwayTeamId]['score_against'] = empty($arrTeams[$intAwayTeamId]['score_against']) ? $arrResult['fix_home_score'] : $arrTeams[$intAwayTeamId]['score_against'] + $arrResult['fix_home_score'];
+                $arrTeams[$intAwayTeamId]['score_diff'] = $arrTeams[$intAwayTeamId]['score_for'] - $arrTeams[$intAwayTeamId]['score_against'];                
+            }
+            
+            $this->objDb->beginTransaction();
+            foreach ($arrTeams as $intTeamId=>$arrTeamInfo)
+            {
+                $strSql = "UPDATE competition_team 
+                            SET ctm_played = ?, 
+                                ctm_won = ?,
+                                ctm_drawn = ?,
+                                ctm_lost = ?,
+                                ctm_points = ?,
+                                ctm_score_for = ?,
+                                ctm_score_against = ?,
+                                ctm_score_diff = ?
+                            WHERE ctm_competition = ? 
+                            AND ctm_season_instance = ?
+                            AND ctm_team = ?                                
+                            ";
+                            
+                $arrQueryParams = array($arrTeamInfo['played'], 
+                                        $arrTeamInfo['won'], 
+                                        $arrTeamInfo['drawn'], 
+                                        $arrTeamInfo['lost'], 
+                                        $arrTeamInfo['points'], 
+                                        $arrTeamInfo['score_for'], 
+                                        $arrTeamInfo['score_against'], 
+                                        $arrTeamInfo['score_diff'],
+                                        $arrParams['competitionId'],
+                                        $arrParams['seasonId'],
+                                        $intTeamId
+                                        );
+                                        
+                $objQuery = $this->objDb->prepare($strSql);
+                $objQuery->execute($arrQueryParams);                
+            }
+
+            $this->objDb->commit();
+            
+            self::sortTableForCompetition($arrParams);
+                        
+            return self::getTablesByCompetition($arrParams);
                                                      
         }
         
@@ -88,11 +195,13 @@
             $objTeams = new DataTeams();
             $arrTeams = $objTeams->getTeamsInCompetition($arrParams, 'array');
             
+            /*
             if (!$this->objDb->inTransaction())            
             {
                 $this->objDb->beginTransaction();
                 $bolCommit = true;
             }
+            */
             
             foreach($arrTeams as $objTeam)
             {
@@ -102,11 +211,64 @@
                 $objQuery->execute($arrQueryParams);
             }            
             
+            /*
             if (!empty($bolCommit))
             {
                 $this->objDb->commit();                
             }
+            */
             
+            return true;            
+        }
+        
+        
+        /**
+        * Sort a season/competition and update the rankings into the table.
+        * 
+        * @param mixed $arrParams
+        * @param mixed $strFormat
+        */
+        private function sortTableForCompetition(array $arrParams, $strFormat='json')
+        {
+            $arrRequired = array('competitionId', 'seasonId'); 
+            $arrOptional = array();
+
+            if (!self::hasRequiredParameters($arrRequired, $arrParams))
+            {
+                throw new ApiException("The following parameters are required: ".join(',',$arrRequired), 400);
+            }       
+
+            $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);
+            
+            $strSql = "SELECT ctm_team 
+                        FROM competition_team
+                        WHERE ctm_competition = ?
+                        AND ctm_season_instance = ? 
+                        ORDER BY ctm_knocked_out_round ASC, ctm_points DESC, ctm_score_diff DESC, ctm_score_for DESC, ctm_score_against ASC, ctm_won DESC, ctm_drawn DESC, ctm_lost ASC, ctm_previous_pos ASC
+                        ";
+
+            $objQuery = $this->objDb->prepare($strSql);
+            $arrQueryParams = array($arrParams['competitionId'], $arrParams['seasonId']);
+            $objQuery->execute($arrQueryParams);
+            $arrComp = $objQuery->fetchAll(PDO::FETCH_COLUMN);
+                        
+            foreach ($arrComp as $intRank=>$intTeam)
+            {
+                $intRank += 1;
+                
+                $strSql = "UPDATE competition_team 
+                            SET ctm_previous_pos = ctm_current_pos, 
+                                ctm_current_pos = ? 
+                            WHERE ctm_season_instance = ? 
+                                AND ctm_competition = ? 
+                                AND ctm_team = ?
+                          ";
+                          
+                $objQuery = $this->objDb->prepare($strSql);
+                $arrQueryParams = array($intRank, $arrParams['seasonId'], $arrParams['competitionId'], $intTeam);
+                $objQuery->execute($arrQueryParams);                
+            }
+                                    
             return true;            
         }
 

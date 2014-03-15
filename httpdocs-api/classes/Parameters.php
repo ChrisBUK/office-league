@@ -66,7 +66,7 @@ class Parameters {
         switch ($strParamName) 
         {
             case 'method':
-                $arrAllowList = array('get','create');
+                $arrAllowList = array('get','create','update');
                 $strParamValue = self::getAllowedParam($arrParamSource, 'method', $arrAllowList, 'get');
                 break;
             
@@ -88,11 +88,27 @@ class Parameters {
 
             case 'roundId':
                 $strParamValue = !empty($arrParamSource['roundId']) ? intval($arrParamSource['roundId']) : 0;
-                break;  
+                break; 
+                
+            case 'fixtureId':
+                $strParamValue = !empty($arrParamSource['fixtureId']) ? intval($arrParamSource['fixtureId']) : 0;
+                break;
+               
+            case 'homeScore':
+                $strParamValue = !empty($arrParamSource['homeScore']) ? intval($arrParamSource['homeScore']) : 0;
+                break;             
+            
+            case 'awayScore':
+                $strParamValue = !empty($arrParamSource['awayScore']) ? intval($arrParamSource['awayScore']) : 0;
+                break;             
             
             case 'notKnockedOut':
                 $strParamValue = !empty($arrParamSource['notKnockedOut']) ? 1 : 0;
                 break;         
+                
+            case 'played':
+                $strParamValue = !empty($arrParamSource['played']) ? 1 : 0;
+                break;                     
                 
             default:
                 return null;

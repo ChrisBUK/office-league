@@ -36,8 +36,8 @@ abstract class AbstractData
     public function hasRequiredParameters(array $arrRequired, array $arrParamSource)
     {
         foreach ($arrRequired as $strParam)
-        {
-            if (Parameters::getParam($strParam, $arrParamSource) == null)
+        {            
+            if (Parameters::getParam($strParam, $arrParamSource) === null)
             {
                 return false;
             }

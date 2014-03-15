@@ -40,13 +40,16 @@ try {
             //List all comps with this season_type_id
             $objData = new DataSeasons();
             $objData->getCompsBySeasonType();
-            
-            //Apply promotions and relegations between comps
-            
-            //Generate a fixture list for each comp
-            
+                       
+            //Generate a fixture list for each comp            
             $objRequest = new DataFixtures();
             $arrFixtures = $objRequest->createLeagueFixturesByCompetition($_GET, 'array');
+            break;
+        
+        // Register a game as having been played and add the result. This triggers league updates or cup draws as appropriate. 
+        case 'update/result':
+            $objData = new DataFixtures();
+            $strJson = $objData->updateResult($_GET);
             break;
                     
         default:

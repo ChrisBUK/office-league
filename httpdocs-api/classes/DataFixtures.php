@@ -14,7 +14,7 @@
         public function getFixturesByCompetitionAndSeason(array $arrParams, $strFormat='json')
         {
             $arrRequired = array('competitionId', 'seasonId'); 
-            $arrOptional = array();
+            $arrOptional = array('played');
 
             if (!self::hasRequiredParameters($arrRequired, $arrParams))
             {
@@ -23,8 +23,8 @@
 
             $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);            
             
-            $strSql = "SELECT * FROM competition_fixture WHERE fix_competition = ? AND fix_season = ? AND fix_played = 0";
-            $arrQueryParams = array($arrParams['competitionId'], $arrParams['seasonId']);
+            $strSql = "SELECT * FROM competition_fixture WHERE fix_competition = ? AND fix_season = ? AND fix_played = ?";
+            $arrQueryParams = array($arrParams['competitionId'], $arrParams['seasonId'], $arrParams['played']);
 
             $objQuery = $this->objDb->prepare($strSql);
             $objQuery->execute($arrQueryParams);
@@ -169,8 +169,8 @@
         
         /**
         * This method specifically deals with the SSDM cup and the logic has to change
-        * based on the number of teams in it.  Someone must create a way of getting the teams
-        * to the right number in the fairest way and then code it in.
+        * based on the number of teams in it. A way of getting the teams
+        * to the right number in the fairest way must be hardcoded in.
         * 
         * @param mixed $arrTeamIds
         * @param mixed $intRound
@@ -184,7 +184,24 @@
             // Round 2    - Second Division join Winners of R1 (4 + 2 teams = 6 -> 3 teams)
             // Round 3 QF - Premier Division join Winners of R2 (5 + 3 teams = 8 -> 4 teams)
             // Round 4 SF - Semi Finals (4 -> 2 teams)
-            // Round 5 F  - Finals (2 -> 1 team)                                    
+            // Round 5 F  - Finals (2 -> 1 team)    
+            
+            // With 14 teams (5,5,4):
+            // --
+            // Round 1    - Qualifier, Third Division Teams Only (4 teams -> 2 teams)
+            // Round 2    - Qualifier 2 (2 teams -> 1 team)
+            // Round 3    - Add Second Division (5 + 1 teams = 6 -> 3 teams)
+            // Round 4 QF - Add Premier Division (5 + 3 teams = 8 -> 4 teams)
+            // Round 5 SF - Semi Finals (4 teams -> 2 teams)
+            // Round 6 F  - Finals (2 -> 1 team)
+            
+            // With 15 teams (5,5,5):
+            // --
+            // Round 1    - All Teams, current holder gets a bye (15 + 1 = 16 -> 8 teams)
+            // Round 2 QF - 8->4 teams
+            // Round 3 SF - 4->2 teams
+            // Round 4 F  - 2->1 team
+                                           
                            
             $arrRequired = array('competitionId', 'seasonId', 'roundId'); 
             $arrOptional = array();
@@ -241,6 +258,59 @@
             }
             
             return self::createKnockoutFixtures($arrParams, $arrTeamIds);            
+        }
+        
+        
+        /**
+        * Resolve a fixture and update appropriate tables/KO's etc
+        * 
+        * @param mixed $arrParams
+        * @param mixed $strFormat
+        */
+        public function updateResult($arrParams, $strFormat='json')
+        {
+            
+            $arrRequired = array('fixtureId', 'homeScore', 'awayScore'); 
+            $arrOptional = array();
+
+            if (!self::hasRequiredParameters($arrRequired, $arrParams))
+            {
+                throw new ApiException("The following parameters are required: ".join(',',$arrRequired), 400);
+            }       
+
+            $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);            
+            
+            $strSql = "SELECT * FROM competition_fixture WHERE fix_id = ?";            
+            $objQuery = $this->objDb->prepare($strSql);
+            $arrQueryParams = array($arrParams['fixtureId']);
+            $objQuery->execute($arrQueryParams);                   
+                        
+            if ($objQuery->rowCount() == 0)
+            {
+                throw new ApiException("Fixture does not exist.", 400);
+            }            
+            
+            $arrFixture = $objQuery->fetch(PDO::FETCH_ASSOC);
+            
+            $strSql = "UPDATE competition_fixture SET fix_played = 1, fix_home_score = ?, fix_away_score = ? WHERE fix_id = ?";                                           
+            $objQuery = $this->objDb->prepare($strSql);
+            $arrQueryParams = array($arrParams['homeScore'], $arrParams['awayScore'], $arrParams['fixtureId']);
+            $objQuery->execute($arrQueryParams);                   
+            
+            if ($objQuery->rowCount() == 0)
+            {
+                throw new ApiException("Fixture not updated - The result has not changed.", 400);
+            }
+
+            try
+            {            
+                $objTables = new DataTables();
+                return $objTables->updateTablesByCompetition(array('competitionId'=>$arrFixture['fix_competition'], 'seasonId'=>$arrFixture['fix_season']), $strFormat);
+            }
+            catch (ApiException $objException)
+            {
+                //Nothing, exceptions are thrown for non league competitions but we can safely ignore them.
+            }                                                        
         }
 
     }

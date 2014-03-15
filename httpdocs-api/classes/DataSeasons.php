@@ -26,7 +26,7 @@
             }
             */
                             
-            // Run through this seasons competitions and assign promotion/relegations
+            // Run through this seasons competitions and re-rank, assign promotion/relegations
             $strSql = "SELECT * 
                         FROM competition_team 
                         JOIN competition_type ON comp_type_id = ctm_competition    
@@ -127,7 +127,8 @@
             ksort($arrNewSeason);
             $this->objDb->commit();                    
             
-            $this->objDb->beginTransaction();                    
+            $this->objDb->beginTransaction();      
+                          
             // We need to know the season type to roll over to the next season
             $strSql = "SELECT sin_season_type, sin_ended FROM season_instance WHERE sin_id = ?";
             $arrQueryParams = array($arrParams['seasonId']);
@@ -174,8 +175,7 @@
             }
             $this->objDb->commit(); 
             
-            // Set up new league fixtures 
-            $this->objDb->beginTransaction();        
+            // Set up new fixtures 
             foreach ($arrComps as $arrComp)
             {
                 switch ($arrComp['format'])
@@ -187,15 +187,11 @@
                     
                     case 'KO':        
                         $ojbFixtures = new DataFixtures();
-                        $arrFixtures = $objFixtures->drawSsdmCup(1);                
+                        $arrFixtures = $objFixtures->drawSsdmCup(array('competitionId'=>$arrComp['id'], 'seasonId'=>$intNewSeasonInstance, 'roundId'=>1));                
                         break;
                 }
             }
-            
-            $this->objDb->commit(); 
-            
-            // Draw cup fixtures                   
-                        
+                                    
             return true;
         }
         
