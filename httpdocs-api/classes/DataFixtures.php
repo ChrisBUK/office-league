@@ -75,10 +75,24 @@
                                         
                     if (!empty($arrTeams[$intHome]) && !empty($arrTeams[$intAway]))
                     {
-                        $arrFixtureRounds[$intRound][$intMatch] = array($arrTeams[$intHome], $arrTeams[$intAway]);    
+                        $arrFixtureRounds[$intRound][$intMatch] = array('home'=>$arrTeams[$intHome], 'away'=>$arrTeams[$intAway]);    
                     }                                                        
                 }
             }            
+                                            
+            $this->objDb->beginTransaction();
+            foreach ($arrFixtureRounds as $intRoundId=>$arrRound)
+            {
+                foreach($arrRound as $intMatchId=>$arrMatch)
+                {
+                    $strSql = "INSERT INTO competition_fixture (fix_season, fix_competition, fix_round, fix_home_team, fix_away_team) VALUES (?,?,?,?,?)";
+                    $objQuery = $this->objDb->prepare($strSql);
+                    $objQuery->execute(array($arrParams['seasonId'], $arrParams['competitionId'], $intRoundId + 1, $arrMatch['home']->teamId, $arrMatch['away']->teamId));                                                
+                }
+            }
+                        
+            $this->objDb->commit();
+                                                        
                                                             
             return self::formatData($arrFixtureRounds, $strFormat);            
         }

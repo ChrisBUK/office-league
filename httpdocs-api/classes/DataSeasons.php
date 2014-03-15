@@ -1,6 +1,7 @@
 <?php
     require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/ApiException.php';
     require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/AbstractData.php';
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/DataFixtures.php';
 
     class DataSeasons extends AbstractData
     {
@@ -37,6 +38,7 @@
             
             $arrLastSeason = $objQuery->fetchAll(PDO::FETCH_ASSOC);
             $arrNewSeason = array();
+            $arrComps = array();
             
             $intCompId = 0;
             
@@ -48,6 +50,7 @@
                 {
                     $intPos = 0;
                     $intCompId = $arrStanding['ctm_competition'];
+                    $arrComps[] = array('format'=>$arrStanding['comp_format'], 'id'=>$arrStanding['ctm_competition']);
                 }
                 
                 $intPos++;
@@ -169,7 +172,27 @@
                 $objQuery = $this->objDb->prepare($strSql);
                 $objQuery->execute(array($intNewSeasonInstance, $arrStanding['compId'], $arrStanding['teamId'], $arrStanding['startPos'], $arrStanding['startPos']));                            
             }
-            $this->objDb->commit();                    
+            $this->objDb->commit(); 
+            
+            // Set up new league fixtures 
+            $this->objDb->beginTransaction();        
+            foreach ($arrComps as $arrComp)
+            {
+                switch ($arrComp['format'])
+                {
+                    case 'LEAGUE':
+                        $objFixtures = new DataFixtures();
+                        $arrFixtures = $objFixtures->createLeagueFixturesByCompetition(array('competitionId'=>$arrComp['id'], 'seasonId'=>$intNewSeasonInstance), 'array');
+                        break;
+                    
+                    case 'KO':                        
+                        break;
+                }
+            }
+            
+            $this->objDb->commit(); 
+            
+            // Draw cup fixtures                   
                         
             return true;
         }
