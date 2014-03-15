@@ -102,10 +102,69 @@
         * 
         * @param mixed $strFormat
         */
-        protected function createKnockoutFixtures($arrTeamIds, $strFormat='json')
+        protected function createKnockoutFixtures(array $arrParams, array $arrTeamIds, $strFormat='json')
         {        
-            shuffle($arrTeamIds);
-               
+            
+            $arrRequired = array('competitionId', 'seasonId', 'roundId'); 
+            $arrOptional = array();
+
+            if (!self::hasRequiredParameters($arrRequired, $arrParams))
+            {
+                throw new ApiException("The following parameters are required: ".join(',',$arrRequired), 400);
+            }       
+
+            $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);            
+            
+            shuffle($arrTeamIds); // To keep the draw fresh.
+            
+            $arrFixtures = array();
+            
+            while (!empty($arrTeamIds))
+            {
+                $intTeam1 = array_shift($arrTeamIds);
+                $intTeam2 = array_shift($arrTeamIds);
+                
+                $arrFixtures[] = array('home'=>$intTeam1, 'away'=>$intTeam2);
+            }
+            
+            //Insert into DB
+            $this->objDb->beginTransaction();
+            
+            // Get list of teams already known in comp so we don't add them again
+            $strSql = "SELECT ctm_team FROM competition_team WHERE ctm_season_instance = ? AND ctm_competition = ? AND ctm_team IN (?,?)";
+            $objQuery = $this->objDb->prepare($strSql);
+            $arrQueryParams = array($arrParams['seasonId'], $arrParams['competitionId'], $arrFixture['home'], $arrFixture['away']);
+            $objQuery->execute($arrQueryParams);                         
+            $arrTeams = $objQuery->fetchAll(PDO::FETCH_COLUMN);
+            
+            foreach ($arrFixtures as $arrFixture)
+            {
+                // Add fixture to season
+                $strSql = "INSERT INTO competition_fixture (fix_season, fix_competition, fix_round, fix_home_team, fix_away_team) VALUES (?,?,?,?,?)";
+                $objQuery = $this->objDb->prepare($strSql);
+                $arrQueryParams = array($arrParams['seasonId'], $arrParams['competitionId'], $arrParams['roundId'], $arrFixture['home'], $arrFixture['away']);
+                $objQuery->execute($arrQueryParams);   
+                                                  
+                // Add newly drawn teams to competition table
+                if (!in_array($arrFixture['home'], $arrTeams))
+                {
+                    $strSql = "INSERT INTO competition_team (ctm_season_instance, ctm_competition, ctm_team) VALUES (?,?,?)";                                           
+                    $objQuery = $this->objDb->prepare($strSql);
+                    $arrQueryParams = array($arrParams['seasonId'], $arrParams['competitionId'], $arrFixture['home']);
+                    $objQuery->execute($arrQueryParams);                         
+                }
+
+                if (!in_array($arrFixture['away'], $arrTeams))
+                {
+                    $strSql = "INSERT INTO competition_team (ctm_season_instance, ctm_competition, ctm_team) VALUES (?,?,?)";                                           
+                    $objQuery = $this->objDb->prepare($strSql);
+                    $arrQueryParams = array($arrParams['seasonId'], $arrParams['competitionId'], $arrFixture['away']);
+                    $objQuery->execute($arrQueryParams);                         
+                }                
+            }           
+            $this->objDb->commit();
+            
+            return $arrFixtures;               
         }
         
         /**
@@ -117,7 +176,7 @@
         * @param mixed $intRound
         * @param mixed $strFormat
         */
-        protected function drawSsdmCup($intRound, $strFormat='json')
+        public function drawSsdmCupRound($arrParams, $strFormat='json')
         {
             // With 13 teams across 3 divisions of 5, 4, 4 the logic is thus:
             // --
@@ -126,22 +185,62 @@
             // Round 3 QF - Premier Division join Winners of R2 (5 + 3 teams = 8 -> 4 teams)
             // Round 4 SF - Semi Finals (4 -> 2 teams)
             // Round 5 F  - Finals (2 -> 1 team)                                    
+                           
+            $arrRequired = array('competitionId', 'seasonId', 'roundId'); 
+            $arrOptional = array();
+
+            if (!self::hasRequiredParameters($arrRequired, $arrParams))
+            {
+                throw new ApiException("The following parameters are required: ".join(',',$arrRequired), 400);
+            }       
+
+            $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);            
             
-            switch ($intRound) 
+            $arrRoundParams = $arrParams; //A copy of the params so we can change a few values.
+            $arrParams['notKnockedOut'] = 1;
+                                                
+            switch ($arrParams['roundId']) 
             {
                 case 1:
+                    $arrRoundParams['competitionId'] = 3;
                     
+                    $objTeams = new DataTeams();
+                    $arrTeams = $objTeams->getTeamsInCompetition($arrRoundParams, 'array');
                     break;
+                    
                 case 2:
+                    $arrRoundParams['competitionId'] = 2;
+                    
+                    $objTeams = new DataTeams();
+                    $arrTeamsInComp = $objTeams->getTeamsInCompetition($arrParams, 'array');                
+                    $arrTeamsAdded  = $objTeams->getTeamsInCompetition($arrRoundParams, 'array');                                    
+                    $arrTeams = array_merge($arrTeamsInComp, $arrTeamsAdded);
                     break;
+                    
                 case 3:
+                    $arrRoundParams['competitionId'] = 1;
+                    
+                    $objTeams = new DataTeams();
+                    $arrTeamsInComp = $objTeams->getTeamsInCompetition($arrParams, 'array');                
+                    $arrTeamsAdded  = $objTeams->getTeamsInCompetition($arrRoundParams, 'array');                
+                    $arrTeams = array_merge($arrTeamsInComp, $arrTeamsAdded);
                     break;
+                    
                 case 4: 
-                    break;
                 case 5:
-                    break;                
+                    $objTeams = new DataTeams();
+                    $arrTeams = $objTeams->getTeamsInCompetition($arrParams, 'array');                
+                    break;
+            }
+
+            //Just need the IDs                   
+            $arrTeamIds = array();
+            foreach ($arrTeams as $objTeam)
+            {
+                $arrTeamIds[] = $objTeam->teamId;
             }
             
+            return self::createKnockoutFixtures($arrParams, $arrTeamIds);            
         }
 
     }

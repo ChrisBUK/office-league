@@ -185,7 +185,9 @@
                         $arrFixtures = $objFixtures->createLeagueFixturesByCompetition(array('competitionId'=>$arrComp['id'], 'seasonId'=>$intNewSeasonInstance), 'array');
                         break;
                     
-                    case 'KO':                        
+                    case 'KO':        
+                        $ojbFixtures = new DataFixtures();
+                        $arrFixtures = $objFixtures->drawSsdmCup(1);                
                         break;
                 }
             }

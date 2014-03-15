@@ -12,7 +12,7 @@
         function getTeamsInCompetition(array $arrParams, $strFormat='json')
         {
             $arrRequired = array('competitionId','seasonId'); 
-            $arrOptional = array();
+            $arrOptional = array('notKnockedOut');
 
             if (!self::hasRequiredParameters($arrRequired, $arrParams))
             {
@@ -32,11 +32,21 @@
                        JOIN team ON ctm_team = team_id 
                        WHERE ctm_competition = ? 
                        AND ctm_season_instance = ?
+                       [NOT_KNOCKED_OUT]
                        ORDER BY ctm_winners DESC, ctm_promoted DESC, ctm_relegated ASC, ctm_knocked_out_round ASC                       
                        ";            
-            
-            $arrQueryParams = array($arrParams['competitionId'], $arrParams['seasonId']);
 
+            $arrQueryParams = array($arrParams['competitionId'], $arrParams['seasonId']);
+                       
+            if (!empty($arrParams['notKnockedOut']))                      
+            {
+                $strSql = str_replace('[NOT_KNOCKED_OUT]', 'AND ctm_knocked_out_round IS NULL', $strSql);
+            } 
+            else
+            {
+                $strSql = str_replace('[NOT_KNOCKED_OUT]', '', $strSql);
+            }        
+                                   
             $objQuery = $this->objDb->prepare($strSql);
             $objQuery->execute($arrQueryParams);
             
