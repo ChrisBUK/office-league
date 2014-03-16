@@ -1,0 +1,7 @@
+Options -Indexes
+RewriteEngine on
+
+
+RewriteRule ^$ /season.php [NC,L]
+RewriteRule ^season(/current/)?$ /season.php [NC,L]
+RewriteRule ^season/([0-9]+)/?$ /season.php?seasonId=$1 [NC,L]

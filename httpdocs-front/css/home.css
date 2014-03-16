@@ -1,0 +1,165 @@
+body {
+    font-family: helvetica, arial, sans-serif;
+    font-size: 90%;
+    background: url('/images/background.jpg') no-repeat fixed;
+    background-size: cover;
+}
+
+.wrap {
+    width: 100%;
+    background: green;
+}
+
+.wrap h1 {
+    background: blue;
+    color: white;
+    font-weight: bold;
+    font-size: 200%;
+    padding: 10px;
+    opacity: 0.8;
+    border-bottom: 2px solid white;
+}
+
+.pageTitle {
+
+}
+
+.col1 {
+    width: 47%;
+    float: left;            
+    padding: 1%;
+}
+
+.col2 {
+    width: 47%;
+    float: left;
+    padding: 1%;
+}
+
+.alignCenter {
+    text-align: center;
+}
+.alignLeft {
+    text-align: left;
+}
+.alignRight {
+    text-align: right;
+}
+
+table thead th td {
+    
+}
+
+table tbody tr td { 
+    padding: 3px;
+}
+
+table tfoot tr td {
+    
+}
+
+div.leagueTable,      
+div.fixtureTableOuter {
+    width: 100%; 
+    margin: 0px;
+    padding: 0px;
+    border: 0px;
+    background: white;
+    opacity: 0.90;
+    padding: 5px 5px 5px 5px;
+    margin-bottom: 10px;
+    border: 1px solid #333;
+    border-radius: 3px;
+    box-shadow: 3px 2px 2px #666;        
+}
+
+div.leagueTable table,
+div.fixtureTable table {
+    width: 100%;
+}
+
+div.leagueTable .tableName {
+    border-bottom: 1px solid red;
+    font-size: 150%;
+    font-weight: bold;    
+}
+
+div.leagueTable .tableFieldHeader
+{
+    background-color: red;
+    color: white;
+}
+
+div.leagueTable .tableFieldHeader th {
+    font-weight: bold;
+}
+
+
+div.leagueTable tfoot {
+    font-size: 70%;
+    color: #333;
+    text-align: right;
+    background: #ddd;
+
+}
+
+div.leagueTable tfoot td:last-child {
+    padding-right: 6px;
+}
+
+
+
+.leftCol {
+    background: #ddd;
+}
+
+.cgLeft {
+    background: #ccc;            
+    font-weight: bold;
+}
+
+.cgGames {
+    background: #fff;
+}
+.cgGoals {
+    background: #eee;
+}
+.cgPoints
+{
+    background: #fff;
+    font-weight: bold;
+}
+
+div.fixtureTable {
+    margin: 5px;
+    padding: 0px;
+    border: 0px;
+}
+
+div.fixtureTable .tableName {
+    background: red;
+    color: white;
+    font-size: 120%;
+    font-weight: bold;
+}
+div.fixtureTable .roundName {
+    padding-top: 5px;
+    background: #333;
+    color: white;
+    font-weight: bold;
+    font-size: 115%;    
+}
+
+div.fixtureTable .compName {
+    font-style:italic;
+    font-size: 70%;
+}
+
+div.fixtureTable .teamName {
+    font-weight: bold;    
+}
+
+div.fixtureTable .fixtureId {
+    color: #999;
+    font-size: 70%;
+} 
