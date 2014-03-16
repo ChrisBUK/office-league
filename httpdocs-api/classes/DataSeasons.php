@@ -268,7 +268,7 @@
             $arrComps = $objQuery->fetchAll(PDO::FETCH_ASSOC);
                                         
             // Reset season instance team stats
-            $strSql = "UPDATE competition_team SET ctm_played = 0, ctm_won = 0, ctm_drawn = 0, ctm_lost = 0, ctm_points = 0, ctm_score_for = 0, ctm_score_against = 0, ctm_score_diff = 0, ctm_previous_pos = ctm_current_pos, ctm_current_pos = 1, , ctm_promoted = 0, ctm_relegated = 0, ctm_winners = 0, ctm_runners_up = 0, ctm_knocked_out_round = NULL WHERE ctm_season_instance = ?";
+            $strSql = "UPDATE competition_team SET ctm_played = 0, ctm_won = 0, ctm_drawn = 0, ctm_lost = 0, ctm_points = 0, ctm_score_for = 0, ctm_score_against = 0, ctm_score_diff = 0, ctm_previous_pos = 99, ctm_current_pos = 99, ctm_promoted = 0, ctm_relegated = 0, ctm_winners = 0, ctm_runners_up = 0, ctm_knocked_out_round = NULL WHERE ctm_season_instance = ?";
             $objQuery = $this->objDb->prepare($strSql);
             $objQuery->execute(array($arrParams['seasonId']));
             
