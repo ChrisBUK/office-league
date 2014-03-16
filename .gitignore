@@ -218,3 +218,4 @@ pip-log.txt
 /logs
 /creative
 httpdocs-api/classes/Config.php
+httpdocs-front/classes/Config.php

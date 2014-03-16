@@ -1,4 +1,5 @@
 <?php
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/Config.php';
     require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/OfficeLeagueApi.php';
     require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/AbstractRenderer.php';
 

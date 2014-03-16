@@ -26,7 +26,7 @@
                             echo "<td class='alignLeft'>".$objLine->awayTeamScore."</td>";                    
                         } else {
                             echo "<td class='alignRight'>&nbsp;</td>";
-                            echo "<td class='alignCenter'><a target='_blank' href='http://YOUR_HOST_HERE/update/result?fixtureId=".$objLine->fixtureId."'>v</a></td>";
+                            echo "<td class='alignCenter'><a target='_blank' href='".Config::API_HOST."/update/result?fixtureId=".$objLine->fixtureId."'>v</a></td>";
                             echo "<td class='alignLeft'>&nbsp;</td>";                                        
                         }
 

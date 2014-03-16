@@ -31,15 +31,16 @@
                     switch (true)
                     {
                         case ($objLine->currentPosition < $objLine->previousPosition):
-                            $strIcon = "^";
+                            $strIcon = "+";
                             break;
                         case ($objLine->currentPosition > $objLine->previousPosition):
-                            $strIcon = "V";
+                            $strIcon = "-";
                             break;
                         default:
                             $strIcon = "=";
                             break;
                     }
+                    
                     echo "<tr>";
                     echo "<td class='alignCenter'>".$strIcon."</td>";
                     echo "<td class='alignCenter'>".($intPos+1)."</td>";

@@ -1,3 +1,6 @@
+<?php
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/classes/Config.php';    
+?>
 <!DOCTYPE html>
 <html>
     <head>
@@ -11,7 +14,7 @@
             }
         </style>
         <h1>API Examples</h1>
-        http://your-api-host/<i>[method]</i>/<i>[request]</i>?<i>[params]</i><br/>
+        http://<?php echo Config::API_HOST; ?> / <i>[method]</i> / <i>[request]</i> ? <i>[params]</i><br/>
       
         <ul>
             <li><a href='/get/currentSeason'>/get/currentSeason</a></li>
