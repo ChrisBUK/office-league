@@ -15,7 +15,7 @@
             $arrOptional = array('notKnockedOut');
 
             if (!self::hasRequiredParameters($arrRequired, $arrParams))
-            {
+            {                
                 throw new ApiException("The following parameters are required: ".join(',',$arrRequired), 400);
             }    
             
@@ -46,7 +46,7 @@
             {
                 $strSql = str_replace('[NOT_KNOCKED_OUT]', '', $strSql);
             }        
-                                   
+                                               
             $objQuery = $this->objDb->prepare($strSql);
             $objQuery->execute($arrQueryParams);
             

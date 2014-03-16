@@ -17,6 +17,11 @@ $strResource = sprintf('%s/%s', $strMethod, $strAction);
 try {
     switch ($strResource)
     {
+        case 'get/currentSeason':
+            $objRequest = new DataSeasons();
+            $strJson = $objRequest->getCurrentSeason($_GET);
+            break;
+                        
         case 'get/tablesByCompetition':    
             $objRequest = new DataTables();
             $strJson = $objRequest->getTablesByCompetition($_GET);
@@ -25,6 +30,11 @@ try {
         case 'get/fixturesByCompetitionAndSeason':
             $objRequest = new DataFixtures();
             $strJson = $objRequest->getFixturesByCompetitionAndSeason($_GET);        
+            break;
+
+        case 'get/fixturesBySeason':
+            $objRequest = new DataFixtures();
+            $strJson = $objRequest->getFixturesBySeason($_GET);        
             break;
             
         case 'get/teamsByCompetition':
@@ -35,9 +45,10 @@ try {
         case 'create/newSeason':
             //Get existing data from the current season with this season_type_id to decide promotions/relegations
             $objOldSeason = new DataSeasons();
-            $objOldSeason->closeSeason();
+            $objOldSeason->closeSeason($_GET);
         
             //List all comps with this season_type_id
+            /*
             $objData = new DataSeasons();
             $objData->getCompsBySeasonType();
                        
@@ -45,6 +56,12 @@ try {
             $objRequest = new DataFixtures();
             $arrFixtures = $objRequest->createLeagueFixturesByCompetition($_GET, 'array');
             break;
+            */
+            
+        case 'reset/season':
+            $objData = new DataSeasons();
+            $strJson = $objData->resetSeason($_GET);
+            break;            
         
         // Register a game as having been played and add the result. This triggers league updates or cup draws as appropriate. 
         case 'update/result':
@@ -61,6 +78,6 @@ try {
     die;
 }
 
-header("Content-Type: text/json");
+header("Content-type: text/json");
 die($strJson);
 ?>

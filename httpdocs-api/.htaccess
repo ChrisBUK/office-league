@@ -2,4 +2,4 @@ Options -Indexes
 RewriteEngine on
 
 # For simplicity and speed we'll expect all calls to be a simple, common format and pass in a query string for the actual params.
-RewriteRule ^(get|create|update)/([a-z]+)/?$ /apiRequest.php?method=$1&action=$2 [QSA,NC,L]
+RewriteRule ^([a-z]+)/([a-z]+)/?$ /apiRequest.php?method=$1&action=$2 [QSA,NC,L]

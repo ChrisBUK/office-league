@@ -64,6 +64,7 @@ class ApiException extends Exception
                 break;
         }
         
+        header("Content-Type: text/json");
         echo json_encode($arrJson);
         die;
     }

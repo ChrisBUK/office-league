@@ -34,7 +34,7 @@ abstract class AbstractData
     * @param mixed $arrRequired
     */
     public function hasRequiredParameters(array $arrRequired, array $arrParamSource)
-    {
+    {        
         foreach ($arrRequired as $strParam)
         {            
             if (Parameters::getParam($strParam, $arrParamSource) === null)

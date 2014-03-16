@@ -5,7 +5,41 @@
 
     class DataSeasons extends AbstractData
     {
+        /**
+        * Get current season based on type. 
+        * 
+        * @param mixed $arrParams
+        * @param mixed $strFormat
+        */
+        public function getCurrentSeason(array $arrParams, $strFormat='json')
+        {
+            $arrRequired = array('seasonTypeId'); 
+            $arrOptional = array();
+
+            if (!self::hasRequiredParameters($arrRequired, $arrParams))
+            {
+                throw new ApiException("The following parameters are required: ".join(',',$arrRequired), 400);
+            }       
+
+            $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);
+            
+            $strSql = "SELECT seas_current_id 
+                        FROM season_type
+                        WHERE seas_type_id = ?
+                        ";
+                        
+            $objQuery = $this->objDb->prepare($strSql);
+            $objQuery->execute(array($arrParams['seasonTypeId']));
+            
+            return self::formatData($objQuery->fetch(PDO::FETCH_ASSOC), $strFormat);            
+        }
         
+        /**
+        * Close a season instance and begin a new one.
+        * 
+        * @param mixed $arrParams
+        * @param mixed $strFormat
+        */
         public function closeSeason(array $arrParams, $strFormat='json')
         {
             $arrRequired = array('seasonId'); 
@@ -194,6 +228,82 @@
                                     
             return true;
         }
+        
+        public function resetSeason(array $arrParams, $strFormat='json') 
+        {
+            $arrRequired = array('seasonId'); 
+            $arrOptional = array();
+
+            if (!self::hasRequiredParameters($arrRequired, $arrParams))
+            {
+                throw new ApiException("The following parameters are required: ".join(',',$arrRequired), 400);
+            }       
+
+            $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);
+
+                                              
+            // We need to know the season type to roll over to the next season
+            $strSql = "SELECT sin_season_type, sin_ended FROM season_instance WHERE sin_id = ?";
+            $arrQueryParams = array($arrParams['seasonId']);
+            $objQuery = $this->objDb->prepare($strSql);
+            $objQuery->execute($arrQueryParams);
+            $arrOldSeason = $objQuery->fetch(PDO::FETCH_ASSOC);
+
+            if (empty($arrOldSeason))
+            {
+                throw new ApiException("This season does not exist in the database", 405);
+            }
+            
+            if (!empty($arrOldSeason['sin_ended']))
+            {
+                throw new ApiException("This season has already been closed", 405);
+            }        
+            
+            // Get season type
+            $strSql = "SELECT comp_format format, comp_type_id id
+                        FROM season_type_competition JOIN competition_type ON comp_type_id = stc_competition WHERE stc_season_type = ?";
+            $arrQueryParams = array($arrOldSeason['sin_season_type']);
+            $objQuery = $this->objDb->prepare($strSql);
+            $objQuery->execute($arrQueryParams);
+            $arrComps = $objQuery->fetchAll(PDO::FETCH_ASSOC);
+                                        
+            // Reset season instance team stats
+            $strSql = "UPDATE competition_team SET ctm_played = 0, ctm_won = 0, ctm_drawn = 0, ctm_lost = 0, ctm_points = 0, ctm_score_for = 0, ctm_score_against = 0, ctm_score_diff = 0, ctm_previous_pos = ctm_current_pos, ctm_current_pos = 1, , ctm_promoted = 0, ctm_relegated = 0, ctm_winners = 0, ctm_runners_up = 0, ctm_knocked_out_round = NULL WHERE ctm_season_instance = ?";
+            $objQuery = $this->objDb->prepare($strSql);
+            $objQuery->execute(array($arrParams['seasonId']));
+            
+            // Delete season instance fixtures - we'll need to redraw them because of cups.
+            $strSql = "DELETE FROM competition_fixture WHERE fix_season = ?";
+            $objQuery = $this->objDb->prepare($strSql);
+            $objQuery->execute(array($arrParams['seasonId']));
+            
+            // Delete entrants into cup competitions - we'll redraw them
+            $strSql = "DELETE FROM competition_team
+                        WHERE (SELECT comp_format FROM competition_type WHERE comp_type_id = ctm_competition) = 'KO'
+                        AND ctm_season_instance = ?
+                        ";                        
+            $objQuery = $this->objDb->prepare($strSql);
+            $objQuery->execute(array($arrParams['seasonId']));
+                                   
+            // Set up new fixtures 
+            foreach ($arrComps as $arrComp)
+            {
+                switch ($arrComp['format'])
+                {
+                    case 'LEAGUE':
+                        $objFixtures = new DataFixtures();
+                        $arrFixtures = $objFixtures->createLeagueFixturesByCompetition(array('competitionId'=>$arrComp['id'], 'seasonId'=>$arrParams['seasonId']), 'array');
+                        break;
+                    
+                    case 'KO':        
+                        $ojbFixtures = new DataFixtures();
+                        $arrFixtures = $objFixtures->drawSsdmCupRound(array('competitionId'=>$arrComp['id'], 'seasonId'=>$arrParams['seasonId'], 'roundId'=>1));                
+                        break;
+                }
+            }
+                                    
+            return true;            
+        }      
         
     }
 ?>

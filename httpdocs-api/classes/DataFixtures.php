@@ -31,6 +31,63 @@
             return self::formatData($objQuery->fetchAll(PDO::FETCH_ASSOC), $strFormat);
         }
         
+        public function getFixturesBySeason(array $arrParams, $strFormat='json')
+        {
+            $arrRequired = array('seasonId'); 
+            $arrOptional = array('played');
+
+            if (!self::hasRequiredParameters($arrRequired, $arrParams))
+            {
+                throw new ApiException("The following parameters are required: ".join(',',$arrRequired), 400);
+            }       
+
+            $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);            
+            
+            if (is_null($arrParams['played']))
+            {
+                $strSql  = "SELECT 
+                                fix_round roundId,
+                                fix_competition competitionId,
+                                (SELECT comp_name FROM competition_type WHERE comp_type_id = fix_competition) competitionName,
+                                fix_home_team homeTeamId,
+                                (SELECT team_name FROM team WHERE team_id = fix_home_team) AS homeTeamName,
+                                (SELECT team_name FROM team WHERE team_id = fix_away_team) AS awayTeamName,
+                                fix_away_team awayTeamId,
+                                fix_played isPlayed,
+                                fix_home_score homeTeamScore,
+                                fix_away_score awayTeamScore,
+                                fix_id fixtureId                
+                            FROM competition_fixture                            
+                            WHERE fix_season = ?";
+                            
+                $arrQueryParams = array($arrParams['seasonId']);
+            }
+            else {
+                
+                $strSql  = "SELECT
+                                fix_round roundId,
+                                fix_competition competitionId,
+                                (SELECT comp_name FROM competition_type WHERE comp_type_id = fix_competition) competitionName,
+                                fix_home_team homeTeamId,
+                                (SELECT team_name FROM team WHERE team_id = fix_home_team) AS homeTeamName,
+                                (SELECT team_name FROM team WHERE team_id = fix_away_team) AS awayTeamName,
+                                fix_away_team awayTeamId,
+                                fix_played isPlayed,
+                                fix_home_score homeTeamScore,
+                                fix_away_score awayTeamScore                
+                             FROM competition_fixture 
+                             WHERE fix_season = ? 
+                             AND fix_played = ?";
+                             
+                $arrQueryParams = array($arrParams['seasonId'], $arrParams['played']);                
+            }
+
+            $objQuery = $this->objDb->prepare($strSql);
+            $objQuery->execute($arrQueryParams);
+            return self::formatData($objQuery->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC), $strFormat);
+            
+        }
+        
         /**
         * Generate all fixtures for a competition
         */
@@ -126,14 +183,14 @@
                 
                 $arrFixtures[] = array('home'=>$intTeam1, 'away'=>$intTeam2);
             }
-            
+                        
             //Insert into DB
             $this->objDb->beginTransaction();
             
             // Get list of teams already known in comp so we don't add them again
-            $strSql = "SELECT ctm_team FROM competition_team WHERE ctm_season_instance = ? AND ctm_competition = ? AND ctm_team IN (?,?)";
+            $strSql = "SELECT ctm_team FROM competition_team WHERE ctm_season_instance = ? AND ctm_competition = ?";
             $objQuery = $this->objDb->prepare($strSql);
-            $arrQueryParams = array($arrParams['seasonId'], $arrParams['competitionId'], $arrFixture['home'], $arrFixture['away']);
+            $arrQueryParams = array($arrParams['seasonId'], $arrParams['competitionId']);
             $objQuery->execute($arrQueryParams);                         
             $arrTeams = $objQuery->fetchAll(PDO::FETCH_COLUMN);
             
@@ -231,7 +288,7 @@
                     $objTeams = new DataTeams();
                     $arrTeamsInComp = $objTeams->getTeamsInCompetition($arrParams, 'array');                
                     $arrTeamsAdded  = $objTeams->getTeamsInCompetition($arrRoundParams, 'array');                                    
-                    $arrTeams = array_merge($arrTeamsInComp, $arrTeamsAdded);
+                    $arrTeams = array_merge($arrTeamsInComp, $arrTeamsAdded);                    
                     break;
                     
                 case 3:
@@ -248,6 +305,9 @@
                     $objTeams = new DataTeams();
                     $arrTeams = $objTeams->getTeamsInCompetition($arrParams, 'array');                
                     break;
+                
+                default:
+                    throw new ApiException("Cup draw is complete, no more rounds.");                    
             }
 
             //Just need the IDs                   
@@ -280,7 +340,7 @@
 
             $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);            
             
-            $strSql = "SELECT * FROM competition_fixture WHERE fix_id = ?";            
+            $strSql = "SELECT fix_id, fix_season, fix_competition, fix_round, fix_home_team, fix_away_team, (SELECT comp_format FROM competition_type WHERE fix_competition = comp_type_id) format FROM competition_fixture WHERE fix_id = ?";            
             $objQuery = $this->objDb->prepare($strSql);
             $arrQueryParams = array($arrParams['fixtureId']);
             $objQuery->execute($arrQueryParams);                   
@@ -289,8 +349,13 @@
             {
                 throw new ApiException("Fixture does not exist.", 400);
             }            
-            
+                        
             $arrFixture = $objQuery->fetch(PDO::FETCH_ASSOC);
+            
+            if ($arrFixture['format'] == 'KO' && $arrParams['awayScore'] == $arrParams['homeScore'])
+            {
+                throw new ApiException("Knockout fixture cannot end in a draw. Play extra time and penalties!", 400);
+            }
             
             $strSql = "UPDATE competition_fixture SET fix_played = 1, fix_home_score = ?, fix_away_score = ? WHERE fix_id = ?";                                           
             $objQuery = $this->objDb->prepare($strSql);
@@ -302,15 +367,45 @@
                 throw new ApiException("Fixture not updated - The result has not changed.", 400);
             }
 
-            try
-            {            
+            if ($arrFixture['format'] == 'LEAGUE')
+            {
                 $objTables = new DataTables();
                 return $objTables->updateTablesByCompetition(array('competitionId'=>$arrFixture['fix_competition'], 'seasonId'=>$arrFixture['fix_season']), $strFormat);
+            } else if ($arrFixture['format'] == 'KO') {
+                
+                //Knock losers out of cup
+                $strSql = "UPDATE competition_team SET ctm_knocked_out_round = ? WHERE ctm_season_instance = ? AND ctm_competition = ? AND ctm_team = ?";
+                $objQuery = $this->objDb->prepare($strSql);
+            
+                $arrQueryParams = array($arrFixture['fix_round'], $arrFixture['fix_season'], $arrFixture['fix_competition']);
+                
+                if ($arrParams['homeScore'] > $arrParams['awayScore'])
+                {
+                    $arrQueryParams[] = $arrFixture['fix_away_team'];
+                }
+                else
+                {
+                    $arrQueryParams[] = $arrFixture['fix_home_team'];
+                }                
+                
+                $objQuery->execute($arrQueryParams);                   
+                                
+                //Draw new cup round?
+                $strSql = "SELECT COUNT(fix_id) AS unplayedFixtures FROM competition_fixture WHERE fix_season = ? AND fix_competition = ? AND fix_round = ? AND fix_played = 0";
+                $objQuery = $this->objDb->prepare($strSql);
+                $arrQueryParams = array($arrFixture['fix_season'], $arrFixture['fix_competition'], $arrFixture['fix_round']);
+                $objQuery->execute($arrQueryParams);                   
+                $intUnplayedFixtures = $objQuery->fetch(PDO::FETCH_COLUMN);
+                
+                if ($intUnplayedFixtures == 0)
+                {
+                    $intNextRound = $arrFixture['fix_round'] += 1;
+                    $objCup = new DataFixtures();
+                    $arrParams = array('seasonId'=>$arrFixture['fix_season'], 'competitionId'=>$arrFixture['fix_competition'], 'roundId'=>$intNextRound);
+                    return $objCup->drawSsdmCupRound($arrParams, 'json');
+                }
             }
-            catch (ApiException $objException)
-            {
-                //Nothing, exceptions are thrown for non league competitions but we can safely ignore them.
-            }                                                        
+                                                            
         }
 
     }

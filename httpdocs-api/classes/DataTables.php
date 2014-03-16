@@ -21,14 +21,69 @@
                 throw new ApiException("The following parameters are required: ".join(',',$arrRequired), 400);
             }       
 
+            $objResult = new stdClass();
+            
             $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);
 
-            $strSql = "SELECT * FROM competition_team WHERE ctm_competition = ? AND ctm_season_instance = ?";
+            $strSql = "SELECT comp_type_id id,
+                              comp_name name,
+                              comp_rank rank,
+                              comp_format format,
+                              comp_total_places totalPlaces,
+                              comp_promo_places promotionPlaces,
+                              comp_releg_places relegationPlaces,
+                              comp_promo_into promotionIntoCompetition,
+                              comp_releg_into relegationIntoCompetition,
+                              comp_points_win pointsForWin,
+                              comp_points_draw pointsForDraw,
+                              comp_points_lose pointsForLose,
+                              comp_rounds numberOfRounds,
+                              comp_rules rules            
+                        FROM competition_type
+                        WHERE comp_type_id = ?                        
+                        ";
+            
+            $arrQueryParams = array($arrParams['competitionId']);
+
+            $objQuery = $this->objDb->prepare($strSql);
+            $objQuery->execute($arrQueryParams);
+            
+            $objResult->competition = $objQuery->fetch(PDO::FETCH_OBJ);
+            
+            $strSql = "SELECT ctm_season_instance seasonId,
+                              ctm_competition competitionId,
+                              ctm_team teamId,
+                              team_name teamName,
+                              ctm_played gamesPlayed,
+                              ctm_won gamesWon,
+                              ctm_drawn gamesDrawn,
+                              ctm_lost gamesLost,
+                              ctm_points pointsTotal,
+                              ctm_score_for scoreFor,
+                              ctm_score_against scoreAgainst,
+                              ctm_score_diff scoreDifference,
+                              ctm_current_pos currentPosition,
+                              ctm_previous_pos previousPosition,
+                              ctm_promoted isPromoted,
+                              ctm_relegated isRelegated,
+                              ctm_winners isWinner,
+                              ctm_runners_up isRunnerUp,
+                              ctm_knocked_out_round roundKnockedOut
+                        FROM competition_team 
+                        JOIN team ON ctm_team = team_id 
+                        WHERE ctm_competition = ? 
+                        AND ctm_season_instance = ?
+                        ORDER BY ctm_current_pos
+                        ";
+                        
             $arrQueryParams = array($arrParams['competitionId'], $arrParams['seasonId']);
 
             $objQuery = $this->objDb->prepare($strSql);
             $objQuery->execute($arrQueryParams);
-            return self::formatData($objQuery->fetchAll(PDO::FETCH_ASSOC), $strFormat);
+            
+            $objResult->table = $objQuery->fetchAll(PDO::FETCH_OBJ);
+                        
+            return self::formatData($objResult, $strFormat);
         }
         
         /**
