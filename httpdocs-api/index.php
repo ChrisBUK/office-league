@@ -4,22 +4,24 @@
         <title>API Examples</title>
     </head>    
     <body>
+        <style>
+            body {
+                font-family: arial;
+                font-size: 85%;
+            }
+        </style>
         <h1>API Examples</h1>
-        http://officeleague-api.dev.codecraft.co.uk/<i>[method]</i>/<i>[request]</i>?<i>[params]</i><br/>
-        e.g: <a href="http://officeleague-api.dev.codecraft.co.uk/get/fixturesByCompetitionAndSeason?competitionId=1&seasonId=1">http://officeleague-api.dev.codecraft.co.uk/get/fixturesByCompetitionAndSeason?competitionId=1&seasonId=1</a>
-                
-        <h2>get/tablesByCompetition</h2>
-        Requires:
+        http://your-api-host/<i>[method]</i>/<i>[request]</i>?<i>[params]</i><br/>
+      
         <ul>
-            <li>competitionId</li>
-            <li>seasonId</li>
-        </ul>
-        
-        <h2>get/fixturesByCompetitionAndSeason</h2>
-        Requires:
-        <ul>
-            <li>competitionId</li>
-            <li>seasonId</li>
+            <li><a href='/get/currentSeason'>/get/currentSeason</a></li>
+            <li><a href='/get/tablesByCompetition'>/get/tablesByCompetition</a></li>
+            <li><a href='/get/fixturesByCompetitionAndSeason'>/get/fixturesByCompetitionAndSeason</a></li>
+            <li><a href='/get/fixturesBySeason'>/get/fixturesBySeason</a></li>
+            <li><a href='/get/teamsByCompetition'>/get/teamsByCompetition</a></li>      
+            <li><a href='/create/newSeason'>/create/newSeason</a></li>            
+            <li><a href='/reset/season'>/reset/season</a></li>            
+            <li><a href='/update/result'>/update/result</a></li>            
         </ul>
     </body>    
 </html>
