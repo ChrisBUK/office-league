@@ -12,10 +12,10 @@ abstract class AbstractData
     
     const PDO_DRIVER  = 'mysql';
     const PDO_HOST    = 'localhost';
-    const PDO_DB      = 'office_league';
+    const PDO_DB      = '@PDO_DB';
     const PDO_CHARSET = 'utf8';
-    const PDO_USER    = 'root';
-    const PDO_PASS    = '';
+    const PDO_USER    = '@PDO_USER';
+    const PDO_PASS    = '@PDO_PASS';
 
     function __construct()
     {
