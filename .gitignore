@@ -217,3 +217,5 @@ pip-log.txt
 #Project specific
 /logs
 /creative
+/httpdocs-front/classes/Config.php
+/httpdocs-api/classes/Config.php
