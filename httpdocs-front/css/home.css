@@ -1,165 +1,116 @@
+html, body {
+    height: 100%;
+}
+
 body {
-    font-family: helvetica, arial, sans-serif;
-    font-size: 90%;
     background: url('/images/background.jpg') no-repeat fixed;
     background-size: cover;
 }
 
-.wrap {
-    width: 100%;
-    background: green;
+body #wrap > .container {
+    padding-top: 60px; 
 }
 
-.wrap h1 {
-    background: blue;
+#wrap {
+  min-height: 100%;
+  height: auto;
+  /* Negative indent footer by its height */
+  margin: 0 auto -48px;
+  /* Pad bottom by footer height */
+  padding: 0 0 48px;    
+}
+
+.navbar-fixed-top {
+    background: black;
+    background: rgba(0,0,0,0.75);    
+}
+
+.navbar > .container .navbar-brand, .navbar > .container-fluid .navbar-brand {
+    color: orange;
+}
+
+.navbar-default .navbar-nav > .active > a, .navbar-default .navbar-nav > .active > a:hover, .navbar-default .navbar-nav > .active > a:focus {
+    background: black;
+    background: rgba(0,0,0,0.95);        
+    color: #eeeeee;
+}
+
+.navbar-default .navbar-nav > li > a {
+    color: #ffffff;
+}
+
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+    color: orange;
+}
+                
+#footer {
+    background: black;
+    background: rgba(0,0,0,0.75);
+    height: 38px;
+    padding-top: 8px;
+    margin-top:10px;
+    position: absolute;
+    width: 100%;
+}
+
+/** Components, prefixed with a C so we can spot them in markup **/
+.c-thead-main {
+    background: #005FAA;
     color: white;
     font-weight: bold;
-    font-size: 200%;
-    padding: 10px;
-    opacity: 0.8;
-    border-bottom: 2px solid white;
+    font-size: 110%;
 }
 
-.pageTitle {
-
+.c-thead-label {
+    background: #BBC7F7 !important;
+    font-weight: bold;
+    font-size: 105%;
 }
 
-.col1 {
-    width: 47%;
-    float: left;            
-    padding: 1%;
+.c-league-table,
+.c-fixture-table {
+    background: white;
+    border-radius: 3px;
+    box-shadow: 3px 3px 2px #666;
 }
 
-.col2 {
-    width: 47%;
-    float: left;
-    padding: 1%;
+.c-competition-name {
+    font-size: 75%;    
 }
 
-.alignCenter {
+.c-team-name {
+    
+}
+
+/** Treatments, prefixed with a T so we can spot them **/
+
+.t-align-center {
     text-align: center;
 }
-.alignLeft {
+.t-align-left {
     text-align: left;
 }
-.alignRight {
+.t-align-right {
     text-align: right;
 }
 
-table thead th td {
-    
+.t-color-light {
+    color: #cccccc;   
 }
 
-table tbody tr td { 
-    padding: 3px;
+.t-color-up {
+    color: green;
 }
 
-table tfoot tr td {
-    
+.t-color-down {
+    color: red;
 }
 
-div.leagueTable,      
-div.fixtureTableOuter {
-    width: 100%; 
-    margin: 0px;
-    padding: 0px;
-    border: 0px;
-    background: white;
-    opacity: 0.90;
-    padding: 5px 5px 5px 5px;
-    margin-bottom: 10px;
-    border: 1px solid #333;
-    border-radius: 3px;
-    box-shadow: 3px 2px 2px #666;        
+/** other **/
+
+
+tfoot {
+    font-size: 75%;
+    background: #BBC7F7;
 }
-
-div.leagueTable table,
-div.fixtureTable table {
-    width: 100%;
-}
-
-div.leagueTable .tableName {
-    border-bottom: 1px solid red;
-    font-size: 150%;
-    font-weight: bold;    
-}
-
-div.leagueTable .tableFieldHeader
-{
-    background-color: red;
-    color: white;
-}
-
-div.leagueTable .tableFieldHeader th {
-    font-weight: bold;
-}
-
-
-div.leagueTable tfoot {
-    font-size: 70%;
-    color: #333;
-    text-align: right;
-    background: #ddd;
-
-}
-
-div.leagueTable tfoot td:last-child {
-    padding-right: 6px;
-}
-
-
-
-.leftCol {
-    background: #ddd;
-}
-
-.cgLeft {
-    background: #ccc;            
-    font-weight: bold;
-}
-
-.cgGames {
-    background: #fff;
-}
-.cgGoals {
-    background: #eee;
-}
-.cgPoints
-{
-    background: #fff;
-    font-weight: bold;
-}
-
-div.fixtureTable {
-    margin: 5px;
-    padding: 0px;
-    border: 0px;
-}
-
-div.fixtureTable .tableName {
-    background: red;
-    color: white;
-    font-size: 120%;
-    font-weight: bold;
-}
-div.fixtureTable .roundName {
-    padding-top: 5px;
-    background: #333;
-    color: white;
-    font-weight: bold;
-    font-size: 115%;    
-}
-
-div.fixtureTable .compName {
-    font-style:italic;
-    font-size: 70%;
-}
-
-div.fixtureTable .teamName {
-    font-weight: bold;    
-}
-
-div.fixtureTable .fixtureId {
-    color: #999;
-    font-size: 70%;
-} 
