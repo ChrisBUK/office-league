@@ -1,28 +1,12 @@
-html, body {
-    height: 100%;
-}
-
 body {
     background: url('/images/background.jpg') no-repeat fixed;
     background-size: cover;
 }
 
-body #wrap > .container {
-    padding-top: 60px; 
-}
-
-#wrap {
-  min-height: 100%;
-  height: auto;
-  /* Negative indent footer by its height */
-  margin: 0 auto -48px;
-  /* Pad bottom by footer height */
-  padding: 0 0 48px;    
-}
-
-.navbar-fixed-top {
+.navbar-default {
     background: black;
-    background: rgba(0,0,0,0.75);    
+    background: rgba(0,0,0,0.75); 
+    border-bottom: 2px solid black;
 }
 
 .navbar > .container .navbar-brand, .navbar > .container-fluid .navbar-brand {
@@ -50,8 +34,7 @@ body #wrap > .container {
     height: 38px;
     padding-top: 8px;
     margin-top:10px;
-    position: absolute;
-    width: 100%;
+    width: 100%;    
 }
 
 /** Components, prefixed with a C so we can spot them in markup **/
@@ -71,8 +54,10 @@ body #wrap > .container {
 .c-league-table,
 .c-fixture-table {
     background: white;
+    /*
     border-radius: 3px;
     box-shadow: 3px 3px 2px #666;
+    */
 }
 
 .c-competition-name {
@@ -107,8 +92,11 @@ body #wrap > .container {
     color: red;
 }
 
-/** other **/
+.t-nowrap {
+    white-space: nowrap;
+}
 
+/** other **/
 
 tfoot {
     font-size: 75%;
