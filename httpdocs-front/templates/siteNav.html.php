@@ -20,20 +20,22 @@
 
     <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-        <!--
       <ul class="nav navbar-nav">
-        <li class="active"><a href="#">Current Season</a></li>
+        <li class="active"><a href="/season/current">Current Season</a></li>
+        <?php
+        /*
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown">Screens <b class="caret"></b></a>
           <ul class="dropdown-menu">
             <li><a href="">Season History</a></li>
           </ul>
         </li>
+        */
+        ?>
       </ul>
-        -->
-
-          <!--
-      <ul class="nav navbar-nav navbar-right">
+      <?php
+      /*
+      <ul class="nav navbar-nav navbar-right">        
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown">Actions <b class="caret"></b></a>
           <ul class="dropdown-menu">
@@ -42,8 +44,24 @@
             <li><a href="#">Season Rollover</a></li>
           </ul>
         </li>
+        <?php            
+            if (!$this->isLoggedIn())
+            {
+        ?>
+                <li><a href="/login">Sign In</a></li>
+        <?php                        
+            }
+            else
+            {
+        ?>
+                <li><a href="/logout">Logout</a></li>
+        <?php                                        
+            }
+        ?>
       </ul>
-          -->
+      */
+      ?>
+
     </div><!-- /.navbar-collapse -->
   </div><!-- /.container-fluid -->
 </nav>

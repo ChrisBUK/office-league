@@ -40,6 +40,7 @@
         * @param mixed $arrParams
         * @param mixed $strFormat
         */
+    
         public function closeSeason(array $arrParams, $strFormat='json')
         {
             $arrRequired = array('seasonId'); 
@@ -113,6 +114,7 @@
                         break;
                 }
                                 
+                // Update the individual teams honours                                
                 $strSql = "UPDATE competition_team 
                             SET ctm_promoted = ?,
                                 ctm_relegated = ?,
@@ -268,7 +270,7 @@
             $arrComps = $objQuery->fetchAll(PDO::FETCH_ASSOC);
                                         
             // Reset season instance team stats
-            $strSql = "UPDATE competition_team SET ctm_played = 0, ctm_won = 0, ctm_drawn = 0, ctm_lost = 0, ctm_points = 0, ctm_score_for = 0, ctm_score_against = 0, ctm_score_diff = 0, ctm_previous_pos = 99, ctm_current_pos = 99, ctm_promoted = 0, ctm_relegated = 0, ctm_winners = 0, ctm_runners_up = 0, ctm_knocked_out_round = NULL WHERE ctm_season_instance = ?";
+            $strSql = "UPDATE competition_team SET ctm_played = 0, ctm_won = 0, ctm_drawn = 0, ctm_lost = 0, ctm_points = 0, ctm_score_for = 0, ctm_score_against = 0, ctm_score_diff = 0, ctm_promoted = 0, ctm_relegated = 0, ctm_winners = 0, ctm_runners_up = 0, ctm_knocked_out_round = NULL WHERE ctm_season_instance = ?";
             $objQuery = $this->objDb->prepare($strSql);
             $objQuery->execute(array($arrParams['seasonId']));
             
@@ -296,8 +298,8 @@
                         break;
                     
                     case 'KO':        
-                        $ojbFixtures = new DataFixtures();
-                        $arrFixtures = $objFixtures->drawSsdmCupRound(array('competitionId'=>$arrComp['id'], 'seasonId'=>$arrParams['seasonId'], 'roundId'=>1));                
+                        $objFixtures = new DataFixtures();
+                        $arrFixtures = $objFixtures->createKnockoutFixtures(array('competitionId'=>$arrComp['id'], 'seasonId'=>$arrParams['seasonId'], 'roundId'=>1), array(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16));                
                         break;
                 }
             }

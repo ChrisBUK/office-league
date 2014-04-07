@@ -17,6 +17,16 @@ $strResource = sprintf('%s/%s', $strMethod, $strAction);
 try {
     switch ($strResource)
     {
+        //Exchange a user Id and Password for a session token to sign api requests with. This changes with each session.
+        case 'get/authToken':
+            $objRequest = new DataUsers();
+            $strJson = $objRequest->checkUserCredentials($_GET);
+            break;
+            
+        //Using a session token, generate an API key which will allow signing of requests from 3rd party services. This does not change once generated unless re-requested.
+        case 'create/apiKey':
+            break;
+        
         case 'get/currentSeason':
             $objRequest = new DataSeasons();
             $strJson = $objRequest->getCurrentSeason($_GET);

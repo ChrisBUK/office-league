@@ -1,7 +1,11 @@
 Options -Indexes
 RewriteEngine on
 
+#RewriteRule ^$ /login.php [NC,L] 
+RewriteRule ^$ /season.php [NC,L] 
 
-RewriteRule ^$ /season.php [NC,L]
-RewriteRule ^season(/current/)?$ /season.php [NC,L]
+RewriteRule ^login$ /login.php [NC,L]
+RewriteRule ^logout$ /login.php?logout=1 [NC,L]
+
+RewriteRule ^season(/current)?/?$ /season.php [NC,L]
 RewriteRule ^season/([0-9]+)/?$ /season.php?seasonId=$1 [NC,L]

@@ -56,7 +56,7 @@
             }
         ?>    
     </tbody>
-    <tfoot>
+    <tfoot class="hidden-xs">
         <tr>
             <td colspan="11" class="t-align-right"><?php echo $objData->competition->rules; ?></td>
         </tr>

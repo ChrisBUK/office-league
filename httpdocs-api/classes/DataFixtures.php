@@ -50,6 +50,7 @@
                 fix_round roundId,
                 fix_competition competitionId,
                 (SELECT comp_name FROM competition_type WHERE comp_type_id = fix_competition) competitionName,
+                (SELECT comp_rank FROM competition_type WHERE comp_type_id = fix_competition) competitionRank,
                 fix_home_team homeTeamId,
                 (SELECT team_name FROM team WHERE team_id = fix_home_team) AS homeTeamName,
                 (SELECT team_name FROM team WHERE team_id = fix_away_team) AS awayTeamName,
@@ -59,7 +60,9 @@
                 fix_away_score awayTeamScore,
                 fix_id fixtureId                
                 FROM competition_fixture                            
-                WHERE fix_season = ?";
+                WHERE fix_season = ?
+                ORDER BY competitionRank
+                ";
 
                 $arrQueryParams = array($arrParams['seasonId']);
             }
@@ -158,9 +161,11 @@
         /**
         * Generate a set of knockout fixtures for a competition.
         * 
-        * @param mixed $strFormat
+        * @param array $arrParams
+        * @param array $arrTeamIds
+        * @param string $strFormat
         */
-        protected function createKnockoutFixtures(array $arrParams, array $arrTeamIds, $strFormat='json')
+        PUBLIC function createKnockoutFixtures(array $arrParams, array $arrTeamIds, $strFormat='json')
         {        
 
             $arrRequired = array('competitionId', 'seasonId', 'roundId'); 
@@ -172,7 +177,7 @@
             }       
 
             $arrParams = Parameters::getFullParamList($arrRequired, $arrOptional, $arrParams);            
-
+            
             shuffle($arrTeamIds); // To keep the draw fresh.
 
             $arrFixtures = array();
@@ -222,7 +227,7 @@
             }           
             $this->objDb->commit();
 
-            return $arrFixtures;               
+            return 'Fixtures drawn';               
         }
 
         /**
@@ -230,10 +235,11 @@
         * based on the number of teams in it. A way of getting the teams
         * to the right number in the fairest way must be hardcoded in.
         * 
-        * @param mixed $arrTeamIds
-        * @param mixed $intRound
+        * @param mixed $arrParams
         * @param mixed $strFormat
         */
+        
+        /*
         public function drawSsdmCupRound($arrParams, $strFormat='json')
         {
             // With 13 teams across 3 divisions of 5, 4, 4 the logic is thus:
@@ -320,6 +326,7 @@
 
             return self::createKnockoutFixtures($arrParams, $arrTeamIds);            
         }
+        */
 
 
         /**
@@ -385,6 +392,7 @@
             else
             {
                 // Make call on rankings service
+                /*
                 $arrHomeData = array('player'=>$arrFixture['fix_home_team'], 'score'=>$arrParams['homeScore']);
                 $arrAwayData = array('player'=>$arrFixture['fix_away_team'], 'score'=>$arrParams['awayScore']);
                 $arrData = array('h'=>$arrHomeData, 'a'=>$arrAwayData, 'group'=>'test', 'playeddate'=>$strCurrentTime, 'ref'=>$arrFixture['fix_id'], 'weight'=>$arrFixture['comp_rankings_weight']);
@@ -399,6 +407,7 @@
                 {
                     $objRankings->createGame($arrData);    
                 }                
+                */
                 
             }
 
@@ -438,7 +447,14 @@
                     $intNextRound = $arrFixture['fix_round'] += 1;
                     $objCup = new DataFixtures();
                     $arrParams = array('seasonId'=>$arrFixture['fix_season'], 'competitionId'=>$arrFixture['fix_competition'], 'roundId'=>$intNextRound);
-                    return $objCup->drawSsdmCupRound($arrParams, 'json');
+                    
+                    //get teams left in comp
+                    $strSql = "SELECT ctm_team FROM competition_team WHERE ctm_season_instance = ? AND ctm_competition = ? AND ISNULL(ctm_knocked_out_round)";
+                    $objQuery = $this->objDb->prepare($strSql);
+                    $arrQueryParams = array($arrParams['seasonId'], $arrParams['competitionId']);
+                    $objQuery->execute($arrQueryParams);                         
+                    $arrTeams = $objQuery->fetchAll(PDO::FETCH_COLUMN);                    
+                    return $objCup->createKnockoutFixtures($arrParams, $arrTeams, 'json');
                 }
             }
 
